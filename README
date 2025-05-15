@@ -1,0 +1,11 @@
+# TODO (5/16/2025)
+
+- Remove `Player` from `Grid`
+- Introduce `Entity` interface
+- Improve tile abstraction (`name`, etc.)
+- Add `Entities []Entity` to `GameState`  
+- Add `AIInput` source
+- Add collision / blocking detection
+- Implement win/loss/game loop logic
+- Switch to graphical tiles
+- Add debug overlay or map editor
