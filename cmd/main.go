@@ -25,13 +25,13 @@ import (
 
 	"github.com/hajimehoshi/bitmapfont/v3"
 	"github.com/kasader/game-prototype/pkg/entities/player"
-	grid "github.com/kasader/game-prototype/pkg/map"
+	grid "github.com/kasader/game-prototype/pkg/gamemap"
+	"github.com/kasader/game-prototype/pkg/input"
 
 	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	rkeyboard "github.com/hajimehoshi/ebiten/v2/examples/resources/images/keyboard"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
@@ -60,56 +60,39 @@ func init() {
 }
 
 type Game struct {
-	world       *World
+	state       *GameState
 	keys        []ebiten.Key
 	debugstring string
 }
 
-type World struct {
+type GameState struct {
 	Grid   *grid.Grid
 	Player *player.Player
+	Input  input.Input
+	// TODO: Enemies, Items, NPCs, etc.
+}
+
+func (w *GameState) Update(input input.Input) {
+	dx, dy := input.GetDirection()
+	w.Player.TryMove(dx, dy, w.Grid)
 }
 
 func (g *Game) Update() error {
-	if g.world == nil {
-		g.world = &World{
+	if g.state == nil {
+		g.state = &GameState{
 			Grid:   grid.GetTestGrid(),
 			Player: player.GetTestPlayer(),
+			Input:  &input.EbitenInput{},
 		}
 	}
-	g.HandleInput(g.world.Player)
+	g.state.Update(g.state.Input)
+
+	/////////////////////////////
+	// REMOVE ME LATER (DEBUG) //
+	x_pos, y_pos := g.state.Player.GetPosition()
+	g.debugstring = fmt.Sprintf("(X:%d, Y:%d)", x_pos, y_pos)
+	/////////////////////////////
 	return nil
-}
-
-func (g *Game) HandleInput(p *player.Player) {
-
-	g.keys = inpututil.AppendJustPressedKeys(g.keys[:0])
-
-	var keyStrs []string
-	var keyNames []string
-
-	for _, k := range g.keys {
-
-		keyStrs = append(keyStrs, k.String())
-		if name := ebiten.KeyName(k); name != "" {
-			keyNames = append(keyNames, name)
-		}
-
-		switch k {
-		case ebiten.KeyArrowDown:
-			p.UpdatePosition(0, -1)
-		case ebiten.KeyArrowLeft:
-			p.UpdatePosition(-1, 0)
-		case ebiten.KeyArrowRight:
-			p.UpdatePosition(+1, 0)
-		case ebiten.KeyArrowUp:
-			p.UpdatePosition(0, +1)
-		}
-
-	}
-	x_pos, y_pos := p.GetPosition()
-	pos_string := fmt.Sprintf("(X:%d, Y:%d)", x_pos, y_pos)
-	g.debugstring = strings.Join(keyStrs, ", ") + "\n" + strings.Join(keyNames, ", ") + "\n" + pos_string
 }
 
 var mplusFaceSource *text.GoTextFaceSource
@@ -134,7 +117,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screenH := screen.Bounds().Dy()
 
 	// Split grid text into lines
-	lines := strings.Split(g.grid.String(), "\n")
+	lines := strings.Split(g.state.Grid.String(), "\n")
 
 	// Prepare font face
 	fontFace := &text.GoTextFace{

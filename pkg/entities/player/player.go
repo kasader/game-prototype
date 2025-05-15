@@ -1,15 +1,16 @@
 package player
 
-import "github.com/kasader/game-prototype/pkg/grid"
+import "github.com/kasader/game-prototype/pkg/gamemap"
 
 type Player struct {
-	x_pos int16
-	y_pos int16
+	X int
+	Y int
 
-	x_min int16
-	x_max int16
-	y_min int16
-	y_max int16
+	// FIXME: This should be read-in from the grid bounds, etc.
+	x_min int
+	x_max int
+	y_min int
+	y_max int
 }
 
 func GetTestPlayer() *Player {
@@ -21,18 +22,16 @@ func GetTestPlayer() *Player {
 	}
 }
 
-func (p *Player) UpdatePosition(x, y int16, g *grid.Grid) {
-	newX := p.x_pos + x
-	if newX >= p.x_min && newX < p.x_max {
-		p.x_pos = newX
-	}
-
-	newY := p.y_pos + y
-	if newY >= p.y_min && newY < p.y_max {
-		p.y_pos = newY
-	}
+func (p *Player) GetPosition() (x, y int) {
+	return p.X, p.Y
 }
 
-func (p *Player) GetPosition() (x, y int16) {
-	return p.x_pos, p.y_pos
+func (p *Player) TryMove(dx, dy int, g *gamemap.Grid) {
+	newX := p.X + dx
+	newY := p.Y + dy
+
+	if g.InBounds(newX, newY) && g.IsWalkable(newX, newY) {
+		p.X = newX
+		p.Y = newY
+	}
 }

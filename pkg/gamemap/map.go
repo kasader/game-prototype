@@ -1,26 +1,21 @@
-package grid
+package gamemap
 
 import (
 	"fmt"
 	"slices"
 	"strings"
-
-	"github.com/kasader/game-prototype/pkg/player"
-	"github.com/kasader/game-prototype/pkg/tile"
 )
 
 type Grid struct {
-	x_len  uint16
-	y_len  uint16
-	grid   [][]tile.Tile
-	Player *player.Player
+	grid         [][]Tile
+	x_len, y_len int
 }
 
-func NewGrid(x, y uint16) *Grid {
+func NewGrid(x, y int) *Grid {
 	return &Grid{
 		x_len: x,
 		y_len: y,
-		grid:  make([][]tile.Tile, x),
+		grid:  make([][]Tile, x),
 	}
 }
 
@@ -28,7 +23,7 @@ func GetTestGrid() *Grid {
 	return &Grid{
 		x_len: 8,
 		y_len: 8,
-		grid: [][]tile.Tile{
+		grid: [][]Tile{
 			{0, 0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0, 0},
@@ -38,20 +33,19 @@ func GetTestGrid() *Grid {
 			{0, 0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0, 0},
 		},
-		Player: player.GetTestPlayer(),
 	}
 }
 
 func (g *Grid) String() string {
-	dgrid := make([][]tile.Tile, len(g.grid))
+	dgrid := make([][]Tile, len(g.grid))
 	for i := range g.grid { // deep copy the grid...
-		dgrid[i] = make([]tile.Tile, len(g.grid[i]))
+		dgrid[i] = make([]Tile, len(g.grid[i]))
 		copy(dgrid[i], g.grid[i])
 	}
 
 	// place player on the grid
-	x_pos, y_pos := g.Player.GetPosition()
-	dgrid[y_pos][x_pos] = tile.Player
+	// x_pos, y_pos := g.Player.GetPosition()
+	// dgrid[y_pos][x_pos] = Player
 
 	// draw the grid:
 	var gridStrs []string
@@ -65,4 +59,26 @@ func (g *Grid) String() string {
 	slices.Reverse(gridStrs)
 
 	return strings.Join(gridStrs, "\n")
+}
+
+func (g *Grid) InBounds(newX, newY int) bool {
+	// First check for X in-bounds, followed by check Y in-bounds.
+	return (newX >= 0 && newX < g.x_len) && (newY >= 0 && newY < g.y_len)
+}
+
+func (g *Grid) IsWalkable(newX, newY int) bool {
+	tile := g.grid[newY][newX]
+	switch tile {
+	case TileWall:
+		return false
+	default:
+		return true
+	}
+}
+
+func (g *Grid) Width() int  { return g.x_len }
+func (g *Grid) Height() int { return g.y_len }
+
+func (g *Grid) GetTile(x, y int) Tile {
+	return g.grid[y][x]
 }
