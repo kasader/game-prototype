@@ -100,62 +100,60 @@ func (g *Game) Update() error {
 var mplusFaceSource *text.GoTextFaceSource
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	const (
-		offsetX = 24
-		offsetY = 40
-	)
-
-	const (
-		normalFontSize = 24
-		bigFontSize    = 48
-	)
-
 	ebitenutil.DebugPrint(screen, g.debugstring)
 
-	const x = 20
-
-	// Get screen dimensions
-	screenW := screen.Bounds().Dx()
-	screenH := screen.Bounds().Dy()
-
-	// Split grid text into lines
+	screenW, screenH := screen.Bounds().Dx(), screen.Bounds().Dy()
 	lines := RenderGrid(g.state.Grid, g.state.Player)
 
-	// Prepare font face
+	// Dynamic font size: fit grid to height
+	numRows := len(lines)
+	if numRows == 0 {
+		return
+	}
+
+	// Use a monospaced assumption: fixed height per line
+	fontSize := float64(screenH) / float64(numRows)
+
+	// Approx character width-to-height ratio for most monospace fonts ~0.6
+	charRatio := 0.6
+
+	// Use widest line to determine width scaling
+	maxCols := 0
+	for _, line := range lines {
+		if len(line) > maxCols {
+			maxCols = len(line)
+		}
+	}
+
+	// Adjust font size if it would overflow horizontally
+	horizFitSize := float64(screenW) / (charRatio * float64(maxCols))
+	if horizFitSize < fontSize {
+		fontSize = horizFitSize
+	}
+
+	// Build font face
 	fontFace := &text.GoTextFace{
 		Source: mplusFaceSource,
-		Size:   normalFontSize,
+		Size:   fontSize,
 	}
 
-	// Measure text height
-	lineHeight := normalFontSize // or use font metrics if needed
-	totalHeight := lineHeight * len(lines)
+	// Calculate baseline line height
+	lineHeight := fontSize
 
-	// Start Y to vertically center
-	startY := (screenH - totalHeight) / 2
+	// Center grid block vertically
+	startY := (float64(screenH) - lineHeight*float64(numRows)) / 2
 
-	// Draw each line
 	for i, line := range lines {
-		lineWidth := screenW
-
-		// Center horizontally
-		x := (screenW - lineWidth) / 2
-		y := startY + i*lineHeight
+		// Width in pixels (estimated from char count and font size)
+		linePixelWidth := charRatio * fontSize * float64(len(line))
+		x := (float64(screenW) - linePixelWidth) / 2
+		y := startY + float64(i)*lineHeight
 
 		op := &text.DrawOptions{}
-		op.GeoM.Translate(float64(x), float64(y))
+		op.GeoM.Translate(x, y)
 		op.ColorScale.ScaleWithColor(color.White)
-
 		text.Draw(screen, line, fontFace, op)
 	}
-
-	op := &text.DrawOptions{}
-	op.GeoM.Translate(x, 60)
-	op.ColorScale.ScaleWithColor(color.White)
-	text.Draw(screen, "", &text.GoTextFace{
-		Source: mplusFaceSource,
-		Size:   normalFontSize,
-	}, op)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -178,7 +176,7 @@ func RenderGrid(grid *gamemap.Grid, player *player.Player) []string {
 			if player.X == x && player.Y == y {
 				row = append(row, "P")
 			} else {
-				row = append(row, fmt.Sprintf("%d", grid.GetTile(x, y)))
+				row = append(row, grid.GetTile(x, y).String())
 			}
 		}
 		out = append(out, "["+strings.Join(row, " ")+"]")
