@@ -21,10 +21,12 @@ import (
 	"image/color"
 	_ "image/png"
 	"log"
+	"slices"
 	"strings"
 
 	"github.com/hajimehoshi/bitmapfont/v3"
 	"github.com/kasader/game-prototype/pkg/entities/player"
+	"github.com/kasader/game-prototype/pkg/gamemap"
 	grid "github.com/kasader/game-prototype/pkg/gamemap"
 	"github.com/kasader/game-prototype/pkg/input"
 
@@ -117,7 +119,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screenH := screen.Bounds().Dy()
 
 	// Split grid text into lines
-	lines := strings.Split(g.state.Grid.String(), "\n")
+	lines := RenderGrid(g.state.Grid, g.state.Player)
 
 	// Prepare font face
 	fontFace := &text.GoTextFace{
@@ -166,4 +168,21 @@ func main() {
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func RenderGrid(grid *gamemap.Grid, player *player.Player) []string {
+	var out []string
+	for y := 0; y < grid.Height(); y++ {
+		var row []string
+		for x := 0; x < grid.Width(); x++ {
+			if player.X == x && player.Y == y {
+				row = append(row, "P")
+			} else {
+				row = append(row, fmt.Sprintf("%d", grid.GetTile(x, y)))
+			}
+		}
+		out = append(out, "["+strings.Join(row, " ")+"]")
+	}
+	slices.Reverse(out)
+	return out
 }

@@ -12,13 +12,13 @@ func (e *EbitenInput) GetDirection() (dx, dy int) {
 		dx = -1
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowRight) {
-		dx = 1
+		dx = +1
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) {
-		dy = -1
+		dy = +1
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowDown) {
-		dy = 1
+		dy = -1
 	}
 	return
 }
